@@ -1,4 +1,4 @@
-package com.github.chess.movement;
+package com.github.j0hncena.chess.movement;
 
 public class BoardBoundary implements MovementBehavior {
 
