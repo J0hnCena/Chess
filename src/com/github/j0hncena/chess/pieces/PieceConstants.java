@@ -1,4 +1,4 @@
-package com.github.chess.pieces;
+package com.github.j0hncena.chess.pieces;
 
 import java.awt.Image;
 

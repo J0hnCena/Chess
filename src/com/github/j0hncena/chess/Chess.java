@@ -1,4 +1,4 @@
-package com.github.chess;
+package com.github.j0hncena.chess;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;

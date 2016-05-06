@@ -1,4 +1,4 @@
-package com.github.chess.pieces;
+package com.github.j0hncena.chess.pieces;
 
 import java.awt.Graphics;
 import java.awt.Image;
@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
-import com.github.chess.movement.MovementBehavior;
+import com.github.j0hncena.chess.movement.MovementBehavior;
 
 public abstract class Piece {
 	private boolean isSuperior;
