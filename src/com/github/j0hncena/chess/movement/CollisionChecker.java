@@ -13,8 +13,11 @@ public class CollisionChecker {
 	public boolean checkCollision(Piece[][] chessboard, Piece p, int startX, int startY, int endX, int endY) {
 		if(p != null) {
 			if(p instanceof Bishop || p instanceof Rook || p instanceof Queen) {
-				int xIncrement = Math.abs(startX - endX) != 0 ? (endX - startX) / Math.abs(startX - endX) : 0;
-				int yIncrement = Math.abs(startY - endY) != 0 ? (endY - startY) / Math.abs(startY - endY) : 0;
+				
+				//int xIncrement = Math.abs(endX - startX) != 0 ? (endX - startX) / Math.abs(startX - endX) : 0;
+				int xIncrement = (int) Math.signum(endX - startX);
+				int yIncrement = (int) Math.signum(endY - startY);
+				//int yIncrement = Math.abs(endY - startY) != 0 ? (endY - startY) / Math.abs(startY - endY) : 0;
 				int counter = Math.abs(startX - endX) > Math.abs(startY - endY) ? Math.abs(startX - endX) : Math.abs(startY - endY);
 				for(int i = 0; i<counter-1; i++) {
 					if(chessboard[startX += xIncrement][startY += yIncrement] != null) {

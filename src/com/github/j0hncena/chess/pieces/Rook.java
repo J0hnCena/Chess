@@ -4,8 +4,12 @@ import java.awt.Graphics;
 
 import javax.swing.JPanel;
 
-public class Rook extends Piece{
+import com.github.j0hncena.chess.movement.FirstMoveRules;
 
+public class Rook extends Piece implements FirstMoveRules{
+
+	private boolean moved = false;
+	
 	public Rook(boolean isSuperior) {
 		super(isSuperior);
 	}
@@ -20,7 +24,7 @@ public class Rook extends Piece{
 	 */
 	@Override
 	public boolean isValid(Piece[][] board, int fromX, int fromY, int toX, int toY) {
-		return super.isValid(board, fromX, fromY, toX, toY) && checkStraightMovement(fromX, fromY, toX, toY);
+		return checkStraightMovement(fromX, fromY, toX, toY) && super.isValid(board, fromX, fromY, toX, toY);
 	}
 
 	public boolean checkStraightMovement(int fromX, int fromY, int toX, int toY) {
@@ -33,6 +37,22 @@ public class Rook extends Piece{
 	@Override
 	public Piece clone() {
 		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.github.j0hncena.chess.movement.FirstMoveRules#setMoved(boolean)
+	 */
+	@Override
+	public void setMoved(boolean moved) {
+		this.moved = moved;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.github.j0hncena.chess.movement.FirstMoveRules#getMoved()
+	 */
+	@Override
+	public boolean getMoved() {
+		return moved;
 	}
 
 

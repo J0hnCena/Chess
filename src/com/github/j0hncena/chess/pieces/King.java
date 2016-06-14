@@ -4,14 +4,18 @@ import java.awt.Graphics;
 
 import javax.swing.JPanel;
 
-public class King extends Piece{
+import com.github.j0hncena.chess.movement.FirstMoveRules;
+
+public class King extends Piece implements FirstMoveRules{
 
 	private int colorNumber;
+	private boolean moved;
 	
 	private static final long serialVersionUID = 1L;
 
 	public King(boolean isSuperior) {
 		super(isSuperior);
+		moved = false;
 	}
 
 	/* (non-Javadoc)
@@ -32,8 +36,23 @@ public class King extends Piece{
 
 	@Override
 	public Piece clone() {
-		// TODO Auto-generated method stub
 		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.github.j0hncena.chess.movement.FirstMoveRules#setMoved(boolean)
+	 */
+	@Override
+	public void setMoved(boolean moved) {
+		this.moved = moved;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.github.j0hncena.chess.movement.FirstMoveRules#getMoved()
+	 */
+	@Override
+	public boolean getMoved() {
+		return moved;
 	}
 
 

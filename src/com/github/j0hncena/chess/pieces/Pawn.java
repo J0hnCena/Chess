@@ -61,7 +61,6 @@ public class Pawn extends Piece implements FirstMoveRules{
 			if(move) {
 				if(Math.abs(toY - fromY) == 2) {
 					this.setEnPassantable(true);
-					System.out.println("HARRO");
 				} else {
 					this.setEnPassantable(false);
 				}
@@ -70,7 +69,7 @@ public class Pawn extends Piece implements FirstMoveRules{
 	}
 
 	public Piece clone() {
-		return new Pawn(super.getSuperiority());
+		return new Pawn(super.getWhiteness());
 	}
 
 	public boolean checkDiagonalMovement(int fromX, int fromY, int toX, int toY) {
@@ -94,6 +93,14 @@ public class Pawn extends Piece implements FirstMoveRules{
 	@Override
 	public void setMoved(boolean moved) {
 		this.moved = moved;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.github.j0hncena.chess.movement.FirstMoveRules#getMoved()
+	 */
+	@Override
+	public boolean getMoved() {
+		return moved;
 	}
 
 }

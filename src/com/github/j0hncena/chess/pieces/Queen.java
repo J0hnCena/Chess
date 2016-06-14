@@ -22,7 +22,7 @@ public class Queen extends Piece{
 	 */
 	@Override
 	public boolean isValid(Piece[][] board, int fromX, int fromY, int toX, int toY) {
-		return super.isValid(board, fromX, fromY, toX, toY) && (checkStraightMovement(fromX, fromY, toX, toY) || checkDiagonalMovement(fromX, fromY, toX, toY));
+		return (checkStraightMovement(fromX, fromY, toX, toY) || checkDiagonalMovement(fromX, fromY, toX, toY)) && super.isValid(board, fromX, fromY, toX, toY);
 	}
 	
 	

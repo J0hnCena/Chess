@@ -17,7 +17,7 @@ public class Bishop extends Piece{
 	 */
 	@Override
 	public boolean isValid(Piece [][]board, int fromX, int fromY, int toX, int toY) {
-		return super.isValid(board, fromX, fromY, toX, toY) && checkDiagonalMovement(fromX, fromY, toX, toY);
+		return checkDiagonalMovement(fromX, fromY, toX, toY) && super.isValid(board, fromX, fromY, toX, toY);
 	}
 	
 	public boolean checkDiagonalMovement(int fromX, int fromY, int toX, int toY) {

@@ -8,6 +8,8 @@ import java.awt.event.MouseEvent;
 import javax.swing.JPanel;
 
 import com.github.j0hncena.chess.movement.FirstMoveRules;
+import com.github.j0hncena.chess.movement.Move;
+import com.github.j0hncena.chess.movement.Spot;
 import com.github.j0hncena.chess.pieces.Bishop;
 import com.github.j0hncena.chess.pieces.King;
 import com.github.j0hncena.chess.pieces.Knight;
@@ -16,6 +18,9 @@ import com.github.j0hncena.chess.pieces.Piece;
 import com.github.j0hncena.chess.pieces.Queen;
 import com.github.j0hncena.chess.pieces.Rook;
 
+/**
+ * This class is the gui representation of the chessboard
+ */
 public class Board extends JPanel {
 
 	private static final long serialVersionUID = 6411499808530678723L;
@@ -25,7 +30,12 @@ public class Board extends JPanel {
 	private static boolean makingMove = false;
 	private static Piece chessBoard[][];
 	private boolean isInitialized = false;
+	private boolean isTurn = false;
+	private GameManager manager;
 
+	/**
+	 * Constructor that initializes the board and adds a mouse listener
+	 */
 	public Board() {
 		chessBoard = new Piece[8][8];
 		if(!isInitialized) {
@@ -40,22 +50,24 @@ public class Board extends JPanel {
 			 */
 			@Override
 			public void mousePressed(MouseEvent e) {
-				if (!makingMove) {
+				if (!makingMove && isTurn) {
 					currentPosX = e.getX() / 32;
 					currentPosY = e.getY() / 32;
 					makingMove = true;
-				} else {
+				} else if (isTurn){
 					newPosX = e.getX() / 32;
 					newPosY = e.getY() / 32;
 					makingMove = false;
-					System.out.println(newPosX + " " + newPosY);
-					makeMove(currentPosX, currentPosY, newPosX, newPosY);
+					notifyManager(manager, currentPosX, currentPosY, newPosX, newPosY);
 				}
 			}
 
 		});
 	}
 
+	/**
+	 * initializes a new chessboard
+	 */
 	private void initialize() {
 		for(int i = 0; i< chessBoard.length; i++) {
 			for(int j = 0; j<chessBoard[0].length; j++) {
@@ -89,11 +101,45 @@ public class Board extends JPanel {
 		chessBoard[4][0] = new King(true);
 		chessBoard[4][7] = new King(false);
 	}
-
-	/**Draws the chess board
-	 * @param g the graphics to draw
+	
+	/**
+	 * @return if it is the players turn
 	 */
-	public void drawBoard(Graphics g) {
+	public boolean getTurn() {
+		return isTurn;
+	}
+	
+	/**Sets the turn to taketurn
+	 * @param takeTurn boolean to set isTurn to
+	 */
+	public void setTurn(boolean takeTurn) {
+		isTurn = takeTurn;
+	}
+
+	/**
+	 * @return the manager
+	 */
+	public GameManager getManager() {
+		return manager;
+	}
+
+	/**
+	 * @param manager the manager to set
+	 */
+	public void setManager(GameManager manager) {
+		this.manager = manager;
+	}
+	
+	public void notifyManager(GameManager manager, int oldX, int oldY, int newX, int newY) {
+			manager.makeMove(new Move(new Spot(oldX, oldY), new Spot(newX, newY), this.getPiece(oldX, oldY), this.getPiece(newX, newY)));
+	}
+
+	
+	/* (non-Javadoc)
+	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
+	 */
+	@Override
+	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		this.setBackground(Color.YELLOW);
 		for (int i = 0; i < 64; i += 2) {
@@ -110,77 +156,55 @@ public class Board extends JPanel {
 			}
 		}
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.swing.JComponent#paint(java.awt.Graphics)
+	
+	/**
+	 * @param x the x coordinate
+	 * @param y the y coordinate
+	 * @return the piece at the x,y position
 	 */
-	@Override
-	public void paint(Graphics g) {
-		drawBoard(g);
+	public Piece getPiece(int x, int y) {
+		return chessBoard[x][y];
 	}
-
-	/**moves the piece
-	 * @param oldX the old X coordinate
-	 * @param oldY the old Y coordinate
-	 * @param newX the new X coordinate
-	 * @param newY the new Y coordinate
+	
+	/**
+	 * @param spot the spot that the piece is at
+	 * @return the piece at the spot
 	 */
-	public void makeMove(int oldX, int oldY, int newX, int newY) {
-		if(oldX <= 7 && oldX >= 0 && oldY <=7 && oldY >= 0) {
-			if(chessBoard[oldX][oldY] != null) {
-				if(!checkEnPassant(oldX, oldY, newX, newY)) {
-					if(chessBoard[oldX][oldY].isValid(chessBoard, oldX, oldY, newX, newY)) {
-						if(chessBoard[oldX][oldY] instanceof FirstMoveRules)
-							((FirstMoveRules)chessBoard[oldX][oldY]).setMoved(true);
-						chessBoard[newX][newY] = chessBoard[oldX][oldY];
-						chessBoard[oldX][oldY] = null;
-					}
-				}
-			}
-		}
-		repaint();
+	public Piece getPiece(Spot spot) {
+		return chessBoard[spot.getX()][spot.getY()];
+	}
+	
+	/**
+	 * @return the chessboard
+	 */
+	public Piece [][] getBoard() {
+		return chessBoard;
 	}
 
-	public boolean checkEnPassant(int oldX, int oldY, int newX, int newY) {
-		if(chessBoard[oldX][oldY] instanceof Pawn) {
-			if(checkDiagonalMovement(chessBoard[oldX][oldY], oldX, oldY, newX, newY)) {
-				if(!chessBoard[oldX][oldY].isOnTopSide()) {
-					if(newY - 1 <= 7 && newY - 1 >= 0 && chessBoard[newX][newY - 1] != null && chessBoard[newX][newY - 1] instanceof Pawn && ((Pawn)chessBoard[newX][newY - 1]).isEnPassantable()) {
-						chessBoard[newX][newY - 1] = null;
-						chessBoard[newX][newY] = chessBoard[oldX][oldY];
-						chessBoard[oldX][oldY] = null;
-						return true;
-					}
-				} else {
-					if(newY + 1 <= 7 && newY + 1 >= 0 && chessBoard[newX][newY + 1] != null && chessBoard[newX][newY + 1] instanceof Pawn && ((Pawn)chessBoard[newX][newY + 1]).isEnPassantable()) {
-						chessBoard[newX][newY + 1] = null;
-						chessBoard[newX][newY] = chessBoard[oldX][oldY];
-						chessBoard[oldX][oldY] = null;
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	public boolean checkDiagonalMovement(Piece piece, int fromX, int fromY, int toX, int toY) {
-		if(piece.isOnTopSide()) {
-			if((fromY - toY) == 1 && Math.abs(fromX-toX) == 1) {
-				return true;
-			}
-		} else {
-			if((toY - fromY) == 1 && Math.abs(fromX-toX) == 1) {
-				return true;
-			}
-		}
-		return false;
-	}
-
+	/**deletes a piece
+	 * @param x the x coordinate
+	 * @param y the y coordinate
+	 */
 	public void delete(int x, int y) {
 		chessBoard[x][y] = null;
 	}
-
+	
+	/**Sets a piece at the location
+	 * @param x the x coordinate
+	 * @param y the y coordinate
+	 * @param piece the piece
+	 * @deprecated use {@link #setPiece(Spot, Piece)}} instead
+	 */
+	@Deprecated
+	public void setPiece(int x, int y, Piece piece) {
+		chessBoard[x][y] = piece;
+	}
+	
+	/**Sets a piece at the location
+	 * @param spot the spot to put the piece
+	 * @param piece the piece to put on the spot
+	 */
+	public void setPiece(Spot spot, Piece piece) {
+		chessBoard[spot.getX()][spot.getY()] = piece;
+	}
 }

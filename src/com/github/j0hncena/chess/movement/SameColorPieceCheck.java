@@ -10,7 +10,7 @@ public class SameColorPieceCheck implements MovementChecker{
 	@Override
 	public boolean isValid(Piece[][] board, int fromX, int fromY, int toX, int toY) {
 		if(board[toX][toY] != null && board[fromX][fromY] != null) {
-			if(board[toX][toY].getSuperiority() == board[fromX][fromY].getSuperiority())
+			if(board[toX][toY].getWhiteness() == board[fromX][fromY].getWhiteness())
 				return false;
 		}
 		return true;
