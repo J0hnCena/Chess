@@ -2,6 +2,10 @@ package com.github.j0hncena.chess;
 
 
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,10 +22,12 @@ import java.rmi.registry.Registry;
 import java.util.Enumeration;
 import java.util.Random;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
-import com.github.j0hncena.chess.movement.Move;
+
 
 /**
  *
@@ -29,20 +35,24 @@ import com.github.j0hncena.chess.movement.Move;
 public class Game {
 	private Registry registry = null;
 	public static final int REGISTRY_PORT = 1099;
-	private GameManager SPManager = null;
+	private MoveManager localManager = null;
 	private HumanPlayer remote = null;
 	private HumanPlayer local = null;
+	private Board mpBoard;
 	public static final String FIND_HOST = "Sam Golden is a faggot";
 	private boolean remoteGame;
 	private boolean isHost;
+	private boolean isWhite;
 	private JFrame chessBoard;
-
-
-	public Game() {
+	private JLabel turnLabel;
+	
+	/**
+	 * starts the game
+	 */
+	public void start() {
 		setUp();
 		if(remoteGame) {
 			initializeRemoteGame();
-			
 		} else {
 			initializeGame();
 		}
@@ -75,22 +85,39 @@ public class Game {
 	}
 
 	public static void main(String[] args) {
-
 		Game game = new Game();
-
+		game.start();
 	}
-
+	
+	/**
+	 * Game loop for multiplayer
+	 */
+	public void loop() {
+		
+		//this is while true for now because I haven't made a method to determine checkmate
+		//TODO add checkmate method
+		while(true) {
+			if(local.isTurn()) {
+				
+			} else {
+				
+			}
+			
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 	/**
 	 * initializes a local game
 	 */
 	public void initializeGame() {
 		Board theBoard = new Board();
-		SPManager = new GameManager(theBoard);
-		theBoard.setTurn(true);
-		theBoard.setManager(SPManager);
-		chessBoard.add(theBoard);
-		chessBoard.pack();
-		chessBoard.setVisible(true);
+		localManager = new MoveManager(theBoard, this);
+		theBoard.setManager(localManager);
+		setUpGui(theBoard);
 	}
 
 	/**
@@ -100,14 +127,10 @@ public class Game {
 		JFrame frame = new JFrame("Connecting");
 		JOptionPane options= new JOptionPane("Setting up");
 		options.setOptions(new String[]{"Host", "Join"});
-		options.createDialog(frame, "Setting up connection").setVisible(true);;
+		options.createDialog(frame, "Setting up connection").setVisible(true);
 		try {
 			while(options.getValue().toString().equals("UNINITIALIZED_VALUE")) {
 
-				//the user exited
-				if(options.getValue() == null) {
-					System.exit(0);
-				}
 				Thread.sleep(25); //don't hog cpu if the user is being a dick and waits forever
 			}
 		} catch (InterruptedException ex) {
@@ -115,11 +138,10 @@ public class Game {
 		} catch (NullPointerException ex) {
 			System.exit(0);
 		}
-
 		isHost = options.getValue().toString().equals("Host");
 
 		if(isHost) {
-			boolean isWhite = new Random().nextBoolean();
+			isWhite = new Random().nextBoolean();
 			local = new HumanPlayer(isWhite);
 			try {
 				//HumanPlayer stub = (HumanPlayer)UnicastRemoteObject.exportObject(local, 0);
@@ -151,7 +173,6 @@ public class Game {
 					e.printStackTrace();
 				}
 			}
-
 		} else {
 			//spam the a UDP packet to all computers on the network saying that it is looking for a host
 			try (DatagramSocket socket = new DatagramSocket()){
@@ -195,13 +216,54 @@ public class Game {
 				e.printStackTrace();
 			}
 			frame.dispose();
+			mpBoard = new Board(remote, isWhite);
+			localManager = new MoveManager(mpBoard, this);
+			local.setBoard(mpBoard);
+			setUpGui(mpBoard);
 		}
 	}
 	
-	public void notifyofMove(Move move) {
-		
+	public void setUpGui(Board board) {
+		turnLabel = new JLabel("White's Turn");
+		turnLabel.setPreferredSize(new Dimension(100, 50));
+		board.setPreferredSize(new Dimension(400, 100));
+		chessBoard.add(BorderLayout.EAST, turnLabel);
+		chessBoard.add(BorderLayout.CENTER, board);
+		chessBoard.pack();
+		chessBoard.setVisible(true);
 	}
+	
+	public String queryPiece() {
+		JOptionPane options= new JOptionPane("Choose a piece to promote");
+		options.setOptions(new String[]{"Queen", "Rook", "Bishop", "Knight"});
+		JDialog dialog = new JDialog(chessBoard, "Choose a piece to promote", true);
+		dialog.setContentPane(options);
+		dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		dialog.addWindowListener(new WindowAdapter() {
 
+			/* (non-Javadoc)
+			 * @see java.awt.event.WindowAdapter#windowClosed(java.awt.event.WindowEvent)
+			 */
+			@Override
+			public void windowClosed(WindowEvent e) {
+				
+			}
+			
+		});
+		options.addPropertyChangeListener(event -> {
+			if(dialog.isVisible() && event.getSource() == options && event.getPropertyName().equals(JOptionPane.VALUE_PROPERTY)) {
+				dialog.setVisible(false);
+			}
+		});
+		dialog.pack();
+		dialog.setVisible(true);
+		return options.getValue().toString();
+	}
+	
+	public void toggleTurn() { 
+		turnLabel.setText(turnLabel.getText() == "White's Turn" ? "Black's Turn" : "White's Turn");
+	}
+	
 	private class UDPListener implements Runnable {
 		private volatile boolean running = true;
 
@@ -235,5 +297,6 @@ public class Game {
 		}
 
 	}
+	
 
 }

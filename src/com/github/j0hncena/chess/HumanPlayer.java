@@ -17,9 +17,11 @@ public class HumanPlayer extends Player implements RemotePlayer, Serializable{
 	 * @see com.github.j0hncena.chess.RemotePlayer#makeMove(com.github.j0hncena.chess.movement.Move)
 	 */
 	@Override
-	public void makeMove(Move move) throws RemoteException {
-		getManager().makeMove(move);
+	public void makeRemoteMove(Move move) throws RemoteException{
+		super.makeMove(move);
+		this.getBoard().setTurn(true);
 	}
+	
 	
 	/**Sets the turn
 	 * @param takeTurn
@@ -33,6 +35,19 @@ public class HumanPlayer extends Player implements RemotePlayer, Serializable{
 	 */
 	public boolean isTurn() {
 		return this.isWhite() ? getManager().getTurnCounter() % 2 == 1 : getManager().getTurnCounter() % 2 == 0;
+	}
+
+	@Override
+	public Move getLastMove() throws RemoteException {
+		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.github.j0hncena.chess.Player#isWhite()
+	 */
+	@Override
+	public boolean isWhite() {
+		return super.isWhite();
 	}
 
 

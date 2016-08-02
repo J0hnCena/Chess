@@ -6,24 +6,21 @@ package com.github.j0hncena.chess;
 import com.github.j0hncena.chess.movement.FirstMoveRules;
 import com.github.j0hncena.chess.movement.Move;
 import com.github.j0hncena.chess.movement.Spot;
+import com.github.j0hncena.chess.pieces.Bishop;
 import com.github.j0hncena.chess.pieces.King;
+import com.github.j0hncena.chess.pieces.Knight;
 import com.github.j0hncena.chess.pieces.Pawn;
+import com.github.j0hncena.chess.pieces.Piece;
+import com.github.j0hncena.chess.pieces.Queen;
 import com.github.j0hncena.chess.pieces.Rook;
 
-public class GameManager {
+public class MoveManager {
 	private Board chessBoard;
-	private Player player1;
-	private Player player2;
 	private int turnCounter;
 	private Move lastMove;
 	private Game game = null;
 
-	public GameManager(Board chessboard ) {
-		this.chessBoard = chessboard;
-		turnCounter = 0;
-	}
-
-	public GameManager(Board chessBoard, Game game) {
+	public MoveManager(Board chessBoard, Game game) {
 		this.chessBoard = chessBoard;
 		this.game = game;
 		turnCounter = 0;
@@ -32,32 +29,77 @@ public class GameManager {
 	/* (non-Javadoc)
 	 * @see com.github.j0hncena.chess.RemoteManager#makeMove(com.github.j0hncena.chess.movement.Move)
 	 */
-	public void makeMove(Move move) {
+	public boolean makeMove(Move move) {
+		//don't do what I'm doing here
 		if(basicCheck(move)) {
-			if(!checkEnPassant(move) && !checkCastle(move)) {
-				boolean attackerColor = move.getAttacker().getWhiteness();
-				//it's easier to use the same isValid method instead of refactoring all the isValid methods to use the move class as its argument
-				if(move.getAttacker().isValid(chessBoard.getBoard(), move.getOrigin().getX(), move.getOrigin().getY(), move.getDestination().getX(), move.getDestination().getY())) {
-					if(move.getAttacker() instanceof FirstMoveRules) {
-						((FirstMoveRules)move.getAttacker()).setMoved(true);
+			boolean attackerColor = move.getAttacker().getWhiteness();
+			if(!checkPromotion(move)) {
+				if(!checkEnPassant(move) && !checkCastle(move)) {
+					//it's easier to use the same isValid method instead of refactoring all the isValid methods to use the move class as its argument
+					if(move.getAttacker().isValid(chessBoard.getBoard(), move.getOrigin().getX(), move.getOrigin().getY(), move.getDestination().getX(), move.getDestination().getY())) {
+						if(move.getAttacker() instanceof FirstMoveRules) {
+							((FirstMoveRules)move.getAttacker()).setMoved(true);
+						}
+						chessBoard.setPiece(move.getDestination(), move.getAttacker());
+						chessBoard.setPiece(move.getOrigin(), null);
+						return checkIfInCheckAfterMove(move, attackerColor);
 					}
-					chessBoard.setPiece(move.getDestination(), move.getAttacker());
-					chessBoard.setPiece(move.getOrigin(), null);
-					if(isInCheck(attackerColor, null)){
-						chessBoard.setPiece(move.getDestination(), move.getDefender());
-						chessBoard.setPiece(move.getOrigin(), move.getAttacker());
-						lastMove = null;
-					} else {
-						turnCounter++;
-						lastMove = move;
-					}
-				}
-			} 
+				} 
+						
+			} else {
+				Piece promotedPiece = convertStringToPiece(game.queryPiece(), move.getAttacker().getWhiteness());
+				chessBoard.setPiece(move.getDestination(), promotedPiece);
+				chessBoard.setPiece(move.getOrigin(), null);
+				return checkIfInCheckAfterMove(move, move.getAttacker().getWhiteness());
+			}
 		}
-		
-		chessBoard.repaint();
+		return false;
+	}
+	
+	public Piece convertStringToPiece(String pieceName, boolean color) {
+		switch (pieceName) {
+		case "Pawn":
+			return new Pawn(color);
+		case "Bishop":
+			return new Bishop(color);
+		case "Rook":
+			return new Rook(color);
+		case "Knight":
+			return new Knight(color);
+		case "Queen":
+			return new Queen(color);
+		case "King": 
+			return new King(color);
+		default:
+			throw new IllegalArgumentException("There are no pieces with that name");
+		}
 	}
 
+	public boolean checkPromotion(Move move) {
+		if(move.getAttacker() instanceof Pawn) {
+			if(move.getAttacker().isOnTopSide()) {
+				return (move.getDestination().getY() == 0);
+			} else {
+				return (move.getDestination().getY() == 7);
+			}
+		}
+		return false;
+	}
+	
+	public boolean checkIfInCheckAfterMove(Move move, boolean attackerColor) {
+		if(isInCheck(attackerColor, null)){
+			chessBoard.setPiece(move.getDestination(), move.getDefender());
+			chessBoard.setPiece(move.getOrigin(), move.getAttacker());
+			lastMove = null;
+			return false;
+		} else {
+			turnCounter++;
+			lastMove = move;
+			chessBoard.repaint();
+			return true;
+		}
+	}
+	
 	/**
 	 * @param move
 	 * @return true if the piece on the spot is not null and the spot is in bounds
@@ -96,9 +138,6 @@ public class GameManager {
 				chessBoard.setPiece(move.getDestination(), move.getAttacker());
 				chessBoard.setPiece(move.getOrigin(), null);
 				turnCounter++;
-				if(game != null) {
-					game.notifyofMove(move);
-				}
 				lastMove = move;
 			} else {
 				return false;
@@ -128,9 +167,6 @@ public class GameManager {
 						chessBoard.setPiece(new Spot(move.getDestination().getX(), move.getDestination().getY() - 1), move.getDefender());
 					} else {
 						turnCounter++;
-						if(game != null) {
-							game.notifyofMove(move);
-						}
 					}
 					return true;
 				}
@@ -146,9 +182,6 @@ public class GameManager {
 						chessBoard.setPiece(new Spot(move.getDestination().getX(), move.getDestination().getY() + 1), move.getDefender());
 					} else {
 						turnCounter++;
-						if(game != null) {
-							game.notifyofMove(move);
-						}
 					}
 					return true;
 				}
@@ -245,13 +278,26 @@ public class GameManager {
 	public void setLastMove(Move lastMove) {
 		this.lastMove = lastMove;
 	}
-	
+
+	/**
+	 * @return the game
+	 */
+	public Game getGame() {
+		return game;
+	}
+
+	/**
+	 * @param game the game to set
+	 */
+	public void setGame(Game game) {
+		this.game = game;
+	}
+
 	/**Notify the overall game of a move if it is the turn of the player using the gamemanager and it is a remote game
 	 * @param move
 	 */
 	public void notifyGame(Move move) {
 		if(game != null && chessBoard.getTurn()) {
-			game.notifyofMove(move);
 			chessBoard.setTurn(false);
 		}
 	}

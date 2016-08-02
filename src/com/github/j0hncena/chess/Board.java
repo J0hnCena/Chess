@@ -4,10 +4,10 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.rmi.RemoteException;
 
 import javax.swing.JPanel;
 
-import com.github.j0hncena.chess.movement.FirstMoveRules;
 import com.github.j0hncena.chess.movement.Move;
 import com.github.j0hncena.chess.movement.Spot;
 import com.github.j0hncena.chess.pieces.Bishop;
@@ -31,7 +31,9 @@ public class Board extends JPanel {
 	private static Piece chessBoard[][];
 	private boolean isInitialized = false;
 	private boolean isTurn = false;
-	private GameManager manager;
+	private MoveManager manager;
+	private Player remotePlayer;
+	private boolean isRemoteGame = false;
 
 	/**
 	 * Constructor that initializes the board and adds a mouse listener
@@ -50,19 +52,31 @@ public class Board extends JPanel {
 			 */
 			@Override
 			public void mousePressed(MouseEvent e) {
-				if (!makingMove && isTurn) {
+				if (!makingMove && (isRemoteGame ? isTurn : true)) {
 					currentPosX = e.getX() / 32;
 					currentPosY = e.getY() / 32;
 					makingMove = true;
-				} else if (isTurn){
+				} else if ((isRemoteGame ? isTurn : true)){
 					newPosX = e.getX() / 32;
 					newPosY = e.getY() / 32;
 					makingMove = false;
-					notifyManager(manager, currentPosX, currentPosY, newPosX, newPosY);
+					if(notifyManager(manager, currentPosX, currentPosY, newPosX, newPosY)) {
+						getManager().getGame().toggleTurn();
+						if(isRemoteGame) {
+							notifyRemoteGame(currentPosX, currentPosY, newPosX, newPosY);
+							isTurn = false;
+						}
+					}
 				}
 			}
 
 		});
+	}
+
+	public Board(Player player, boolean remoteGame) {
+		this();
+		this.remotePlayer = player;
+		this.isRemoteGame = remoteGame;
 	}
 
 	/**
@@ -101,14 +115,14 @@ public class Board extends JPanel {
 		chessBoard[4][0] = new King(true);
 		chessBoard[4][7] = new King(false);
 	}
-	
+
 	/**
 	 * @return if it is the players turn
 	 */
 	public boolean getTurn() {
 		return isTurn;
 	}
-	
+
 	/**Sets the turn to taketurn
 	 * @param takeTurn boolean to set isTurn to
 	 */
@@ -119,29 +133,38 @@ public class Board extends JPanel {
 	/**
 	 * @return the manager
 	 */
-	public GameManager getManager() {
+	public MoveManager getManager() {
 		return manager;
 	}
 
 	/**
 	 * @param manager the manager to set
 	 */
-	public void setManager(GameManager manager) {
+	public void setManager(MoveManager manager) {
 		this.manager = manager;
 	}
-	
-	public void notifyManager(GameManager manager, int oldX, int oldY, int newX, int newY) {
-			manager.makeMove(new Move(new Spot(oldX, oldY), new Spot(newX, newY), this.getPiece(oldX, oldY), this.getPiece(newX, newY)));
+
+	public boolean notifyManager(MoveManager manager, int oldX, int oldY, int newX, int newY) {
+		return manager.makeMove(new Move(new Spot(oldX, oldY), new Spot(newX, newY), this.getPiece(oldX, oldY), this.getPiece(newX, newY)));
 	}
 
-	
+	public void notifyRemoteGame(int oldX, int oldY, int newX, int newY) {
+		if(remotePlayer instanceof HumanPlayer) {
+			try {
+				((HumanPlayer) remotePlayer).makeRemoteMove(new Move(new Spot(oldX, oldY), new Spot(newX, newY), this.getPiece(oldX, oldY), this.getPiece(newX, newY)));
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	/* (non-Javadoc)
 	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
 	 */
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		this.setBackground(Color.YELLOW);
+		this.setBackground(new Color(156, 93, 82));
 		for (int i = 0; i < 64; i += 2) {
 			g.setColor(Color.WHITE);
 			g.fillRect((i % 8 + (i / 8) % 2) * squareSize, (i / 8) * squareSize, squareSize, squareSize);
@@ -155,8 +178,9 @@ public class Board extends JPanel {
 				}
 			}
 		}
+
 	}
-	
+
 	/**
 	 * @param x the x coordinate
 	 * @param y the y coordinate
@@ -165,7 +189,7 @@ public class Board extends JPanel {
 	public Piece getPiece(int x, int y) {
 		return chessBoard[x][y];
 	}
-	
+
 	/**
 	 * @param spot the spot that the piece is at
 	 * @return the piece at the spot
@@ -173,7 +197,7 @@ public class Board extends JPanel {
 	public Piece getPiece(Spot spot) {
 		return chessBoard[spot.getX()][spot.getY()];
 	}
-	
+
 	/**
 	 * @return the chessboard
 	 */
@@ -188,7 +212,7 @@ public class Board extends JPanel {
 	public void delete(int x, int y) {
 		chessBoard[x][y] = null;
 	}
-	
+
 	/**Sets a piece at the location
 	 * @param x the x coordinate
 	 * @param y the y coordinate
@@ -199,7 +223,7 @@ public class Board extends JPanel {
 	public void setPiece(int x, int y, Piece piece) {
 		chessBoard[x][y] = piece;
 	}
-	
+
 	/**Sets a piece at the location
 	 * @param spot the spot to put the piece
 	 * @param piece the piece to put on the spot

@@ -6,6 +6,6 @@ import java.rmi.RemoteException;
 import com.github.j0hncena.chess.movement.Move;
 
 public interface RemotePlayer extends Remote{
-	public void makeMove(Move move) throws RemoteException;
-
+	public void makeRemoteMove(Move move) throws RemoteException;
+	public Move getLastMove() throws RemoteException;
 }
