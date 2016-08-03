@@ -25,11 +25,19 @@ public class MoveManager {
 		this.game = game;
 		turnCounter = 0;
 	}
+	
+	/**
+	 * @param move
+	 * @return
+	 */
+	public boolean makeMove(Move move) {
+		return makeMove(move, true);
+	}
 
 	/* (non-Javadoc)
 	 * @see com.github.j0hncena.chess.RemoteManager#makeMove(com.github.j0hncena.chess.movement.Move)
 	 */
-	public boolean makeMove(Move move) {
+	public boolean makeMove(Move move, boolean checkPromote) {
 		//don't do what I'm doing here
 		if(basicCheck(move)) {
 			boolean attackerColor = move.getAttacker().getWhiteness();
@@ -47,7 +55,7 @@ public class MoveManager {
 				} 
 						
 			} else {
-				Piece promotedPiece = convertStringToPiece(game.queryPiece(), move.getAttacker().getWhiteness());
+				Piece promotedPiece = checkPromote ? convertStringToPiece(game.queryPiece(), move.getAttacker().getWhiteness()) : move.getAttacker();
 				chessBoard.setPiece(move.getDestination(), promotedPiece);
 				chessBoard.setPiece(move.getOrigin(), null);
 				return checkIfInCheckAfterMove(move, move.getAttacker().getWhiteness());
@@ -74,7 +82,32 @@ public class MoveManager {
 			throw new IllegalArgumentException("There are no pieces with that name");
 		}
 	}
-
+	
+	public boolean checkMate(boolean color) {
+		//the amount of brute force is real
+		if(isInCheck(color, kingLocation(color))) {
+			Piece[][] board = chessBoard.getBoard().clone();
+			Board theBoard = new Board();
+			theBoard.setBoard(board);
+			for(int i = 0; i < board.length; i++) {
+				for(int j = 0; j<board[0].length; j++) {
+					Piece testPiece = theBoard.getPiece(i, j);
+					if(testPiece != null && testPiece.getWhiteness() == color) {
+						for(int r = 0; r < board.length; r++) {
+							for(int c = 0; c < board[0].length; c++) {
+								if(makeMove(new Move(new Spot(i, j), new Spot(r, c), testPiece, theBoard.getPiece(r, c)), false)) {
+									return false;
+								}
+							}
+						}
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
 	public boolean checkPromotion(Move move) {
 		if(move.getAttacker() instanceof Pawn) {
 			if(move.getAttacker().isOnTopSide()) {

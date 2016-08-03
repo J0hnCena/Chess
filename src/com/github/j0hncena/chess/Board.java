@@ -28,13 +28,14 @@ public class Board extends JPanel {
 	private static int currentPosX, currentPosY;
 	private static int newPosX, newPosY;
 	private static boolean makingMove = false;
-	private static Piece chessBoard[][];
+	private Piece chessBoard[][];
 	private boolean isInitialized = false;
 	private boolean isTurn = false;
 	private MoveManager manager;
 	private Player remotePlayer;
 	private boolean isRemoteGame = false;
-
+	private boolean isGameOver = false;
+	
 	/**
 	 * Constructor that initializes the board and adds a mouse listener
 	 */
@@ -52,7 +53,7 @@ public class Board extends JPanel {
 			 */
 			@Override
 			public void mousePressed(MouseEvent e) {
-				if (!makingMove && (isRemoteGame ? isTurn : true)) {
+				if (!isGameOver && !makingMove && (isRemoteGame ? isTurn : true)) {
 					currentPosX = e.getX() / 32;
 					currentPosY = e.getY() / 32;
 					makingMove = true;
@@ -65,6 +66,18 @@ public class Board extends JPanel {
 						if(isRemoteGame) {
 							notifyRemoteGame(currentPosX, currentPosY, newPosX, newPosY);
 							isTurn = false;
+						}
+						if(manager.checkMate(!getPiece(newPosX, newPosY).getWhiteness())) {
+							getManager().getGame().gameOver(!getPiece(newPosX, newPosY).getWhiteness());
+							if(isRemoteGame) {
+								if(remotePlayer instanceof RemotePlayer) {
+									try {
+										((RemotePlayer) remotePlayer).gameOver(!getPiece(newPosX, newPosY).getWhiteness());
+									} catch (RemoteException e1) {
+										e1.printStackTrace();
+									}
+								}
+							}
 						}
 					}
 				}
@@ -158,6 +171,27 @@ public class Board extends JPanel {
 		}
 	}
 
+	/**
+	 * @return the isGameOver
+	 */
+	public boolean isGameOver() {
+		return isGameOver;
+	}
+
+	/**
+	 * @param isGameOver the isGameOver to set
+	 */
+	public void setGameOver(boolean isGameOver) {
+		this.isGameOver = isGameOver;
+	}
+
+	/**Notify that the game is over
+	 * @param color
+	 */
+	public void notifyGameOver(boolean color) {
+		getManager().getGame().gameOver(color);
+	}
+	
 	/* (non-Javadoc)
 	 * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
 	 */
@@ -203,6 +237,13 @@ public class Board extends JPanel {
 	 */
 	public Piece [][] getBoard() {
 		return chessBoard;
+	}
+
+	/**
+	 * @param chessBoard the chessBoard to set
+	 */
+	public void setBoard(Piece[][] chessBoard) {
+		this.chessBoard = chessBoard;
 	}
 
 	/**deletes a piece

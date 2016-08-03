@@ -43,6 +43,14 @@ public class HumanPlayer extends Player implements RemotePlayer, Serializable{
 	}
 
 	/* (non-Javadoc)
+	 * @see com.github.j0hncena.chess.RemotePlayer#gameOver(boolean)
+	 */
+	@Override
+	public void gameOver(boolean color) throws RemoteException {
+		getBoard().notifyGameOver(color);
+	}
+
+	/* (non-Javadoc)
 	 * @see com.github.j0hncena.chess.Player#isWhite()
 	 */
 	@Override

@@ -38,13 +38,13 @@ public class Game {
 	private MoveManager localManager = null;
 	private HumanPlayer remote = null;
 	private HumanPlayer local = null;
-	private Board mpBoard;
+	private Board board;
 	public static final String FIND_HOST = "Sam Golden is a faggot";
 	private boolean remoteGame;
 	private boolean isHost;
 	private boolean isWhite;
 	private JFrame chessBoard;
-	private JLabel turnLabel;
+	private JLabel gameLabel;
 	
 	/**
 	 * starts the game
@@ -114,10 +114,10 @@ public class Game {
 	 * initializes a local game
 	 */
 	public void initializeGame() {
-		Board theBoard = new Board();
-		localManager = new MoveManager(theBoard, this);
-		theBoard.setManager(localManager);
-		setUpGui(theBoard);
+		board = new Board();
+		localManager = new MoveManager(board, this);
+		board.setManager(localManager);
+		setUpGui(board);
 	}
 
 	/**
@@ -216,21 +216,26 @@ public class Game {
 				e.printStackTrace();
 			}
 			frame.dispose();
-			mpBoard = new Board(remote, isWhite);
-			localManager = new MoveManager(mpBoard, this);
-			local.setBoard(mpBoard);
-			setUpGui(mpBoard);
+			board = new Board(remote, isWhite);
+			localManager = new MoveManager(board, this);
+			local.setBoard(board);
+			setUpGui(board);
 		}
 	}
 	
 	public void setUpGui(Board board) {
-		turnLabel = new JLabel("White's Turn");
-		turnLabel.setPreferredSize(new Dimension(100, 50));
+		gameLabel = new JLabel("White's Turn");
+		gameLabel.setPreferredSize(new Dimension(100, 50));
 		board.setPreferredSize(new Dimension(400, 100));
-		chessBoard.add(BorderLayout.EAST, turnLabel);
+		chessBoard.add(BorderLayout.EAST, gameLabel);
 		chessBoard.add(BorderLayout.CENTER, board);
 		chessBoard.pack();
 		chessBoard.setVisible(true);
+	}
+	
+	public void gameOver(boolean color) {
+		gameLabel.setText(color ? "White wins!" : "Black wins!");
+		board.setGameOver(true);
 	}
 	
 	public String queryPiece() {
@@ -261,7 +266,7 @@ public class Game {
 	}
 	
 	public void toggleTurn() { 
-		turnLabel.setText(turnLabel.getText() == "White's Turn" ? "Black's Turn" : "White's Turn");
+		gameLabel.setText(gameLabel.getText() == "White's Turn" ? "Black's Turn" : "White's Turn");
 	}
 	
 	private class UDPListener implements Runnable {
